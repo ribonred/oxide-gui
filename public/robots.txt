@@ -1,0 +1,11 @@
+User-Agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /questions
+Disallow: /quizzes
+Disallow: /events
+Disallow: /apikeys
+Disallow: /attempts
+Disallow: /participants
+Disallow: /login
+Disallow: /register

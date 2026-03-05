@@ -17,7 +17,7 @@ export const useQuestions = () => {
       const queryParams = new URLSearchParams()
 
       if (params?.page) queryParams.append('page', params.page.toString())
-      if (params?.per_page) queryParams.append('perPage', params.per_page.toString())
+      if (params?.per_page) queryParams.append('per_page', params.per_page.toString())
       if (params?.category) queryParams.append('category', params.category)
       if (params?.difficulty_level) queryParams.append('difficulty_level', params.difficulty_level)
       if (params?.question_type) queryParams.append('question_type', params.question_type)

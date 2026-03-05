@@ -244,32 +244,6 @@
       </div>
     </div>
 
-    <!-- Pagination -->
-    <div
-      v-if="!loading && totalPages > 1"
-      class="mt-8 flex justify-between items-center"
-    >
-      <button
-        @click="currentPage--"
-        :disabled="currentPage === 1"
-        class="px-4 py-2 bg-gh-card border border-gh-border rounded-lg text-gh-text disabled:opacity-50 disabled:cursor-not-allowed hover:border-gh-accent text-sm font-medium transition-all"
-      >
-        Previous
-      </button>
-
-      <span class="text-gh-text-muted text-sm font-mono">
-        Page {{ currentPage }} / {{ totalPages }}
-      </span>
-
-      <button
-        @click="currentPage++"
-        :disabled="currentPage === totalPages"
-        class="px-4 py-2 bg-gh-card border border-gh-border rounded-lg text-gh-text disabled:opacity-50 disabled:cursor-not-allowed hover:border-gh-accent text-sm font-medium transition-all"
-      >
-        Next
-      </button>
-    </div>
-
     <!-- Empty State -->
     <div v-else class="text-center py-20">
       <svg class="w-20 h-20 text-gh-text-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -291,6 +265,32 @@
           Create Question
         </NuxtLink>
       </div>
+    </div>
+
+    <!-- Pagination (independent of v-if/v-else chain above) -->
+    <div
+      v-if="!loading && displayedQuestions.length > 0 && totalPages > 1"
+      class="mt-8 flex justify-between items-center"
+    >
+      <button
+        @click="currentPage--"
+        :disabled="currentPage === 1"
+        class="px-4 py-2 bg-gh-card border border-gh-border rounded-lg text-gh-text disabled:opacity-50 disabled:cursor-not-allowed hover:border-gh-accent text-sm font-medium transition-all"
+      >
+        Previous
+      </button>
+
+      <span class="text-gh-text-muted text-sm font-mono">
+        Page {{ currentPage }} / {{ totalPages }}
+      </span>
+
+      <button
+        @click="currentPage++"
+        :disabled="currentPage === totalPages"
+        class="px-4 py-2 bg-gh-card border border-gh-border rounded-lg text-gh-text disabled:opacity-50 disabled:cursor-not-allowed hover:border-gh-accent text-sm font-medium transition-all"
+      >
+        Next
+      </button>
     </div>
   </div>
 </template>

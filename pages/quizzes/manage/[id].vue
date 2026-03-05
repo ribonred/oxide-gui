@@ -587,15 +587,13 @@ const hasChanges = computed(() => {
   return hasOrderOrContentChanges || hasRemovals;
 });
 
-// Now using server-side filtering, just paginate the results
+// Server-side pagination - results are already paginated
 const filteredAvailableQuestions = computed(() => {
-  const start = (currentPage.value - 1) * perPage;
-  return availableQuestions.value.slice(start, start + perPage);
+  return availableQuestions.value;
 });
 
-const totalPages = computed(() => {
-  return Math.max(1, Math.ceil(availableQuestions.value.length / perPage));
-});
+const totalPages = ref(1);
+const totalItems = ref(0);
 
 // Debounced search that calls the API
 const performLibrarySearch = async () => {
@@ -615,10 +613,17 @@ const performLibrarySearch = async () => {
         category: filterCategory.value || undefined,
         difficulty_level: filterDifficulty.value || undefined,
         question_type: filterType.value || undefined,
+        page: currentPage.value,
+        per_page: perPage,
       });
 
       if (searchResult.success && searchResult.data) {
         results = searchResult.data.data?.results || [];
+        const pagination = searchResult.data.data?.pagination;
+        if (pagination) {
+          totalPages.value = pagination.totalPages;
+          totalItems.value = pagination.totalItems;
+        }
         // Map the search results to match the expected question format
         availableQuestions.value = results.map((item) => ({
           id: item.question_id || item.id,
@@ -633,19 +638,28 @@ const performLibrarySearch = async () => {
       } else {
         console.error('Search failed:', searchResult.error);
         availableQuestions.value = [];
+        totalPages.value = 1;
+        totalItems.value = 0;
       }
     } else {
       // Use getQuestions API for initial load without filters
       const listResult = await getQuestions({
-        page: 1,
-        per_page: 100,
+        page: currentPage.value,
+        per_page: perPage,
       });
 
       if (listResult.success && listResult.data) {
         availableQuestions.value = listResult.data.data?.results || [];
+        const pagination = listResult.data.data?.pagination;
+        if (pagination) {
+          totalPages.value = pagination.totalPages;
+          totalItems.value = pagination.totalItems;
+        }
       } else {
         console.error('Failed to fetch questions:', listResult.error);
         availableQuestions.value = [];
+        totalPages.value = 1;
+        totalItems.value = 0;
       }
     }
   } catch (error) {
@@ -670,6 +684,11 @@ watch(
     }, 300);
   }
 );
+
+// Watch page changes to re-fetch from server
+watch(currentPage, () => {
+  performLibrarySearch();
+});
 
 // Methods
 const isQuestionInCurrentOrRemove = (questionId) => {

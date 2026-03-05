@@ -22,7 +22,7 @@
           </div>
           <div>
             <h1 class="text-4xl font-bold text-gh-text">{{ categoryName }}</h1>
-            <p class="text-gh-text-muted mt-1">{{ displayedQuestions.length }} {{ displayedQuestions.length === 1 ?
+            <p class="text-gh-text-muted mt-1">{{ totalItems > 0 ? totalItems : displayedQuestions.length }} {{ (totalItems > 0 ? totalItems : displayedQuestions.length) === 1 ?
               'question' : 'questions' }}</p>
           </div>
         </div>
@@ -244,6 +244,32 @@
       </div>
     </div>
 
+    <!-- Pagination -->
+    <div
+      v-if="!loading && totalPages > 1"
+      class="mt-8 flex justify-between items-center"
+    >
+      <button
+        @click="currentPage--"
+        :disabled="currentPage === 1"
+        class="px-4 py-2 bg-gh-card border border-gh-border rounded-lg text-gh-text disabled:opacity-50 disabled:cursor-not-allowed hover:border-gh-accent text-sm font-medium transition-all"
+      >
+        Previous
+      </button>
+
+      <span class="text-gh-text-muted text-sm font-mono">
+        Page {{ currentPage }} / {{ totalPages }}
+      </span>
+
+      <button
+        @click="currentPage++"
+        :disabled="currentPage === totalPages"
+        class="px-4 py-2 bg-gh-card border border-gh-border rounded-lg text-gh-text disabled:opacity-50 disabled:cursor-not-allowed hover:border-gh-accent text-sm font-medium transition-all"
+      >
+        Next
+      </button>
+    </div>
+
     <!-- Empty State -->
     <div v-else class="text-center py-20">
       <svg class="w-20 h-20 text-gh-text-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,6 +314,10 @@ const loading = ref(true)
 const isSearching = ref(false)
 const questions = ref([])
 const searchQuery = ref('')
+const currentPage = ref(1)
+const totalPages = ref(1)
+const totalItems = ref(0)
+const perPage = 20
 const filters = ref({
   difficulty: '',
   type: '',
@@ -342,10 +372,17 @@ const performSearch = async () => {
         difficulty_level: filters.value.difficulty || undefined,
         question_type: filters.value.type || undefined,
         tags: filters.value.tags.length > 0 ? filters.value.tags : undefined,
+        page: currentPage.value,
+        per_page: perPage,
       })
 
       if (result.success && result.data) {
         const results = result.data.data?.results || []
+        const pagination = result.data.data?.pagination
+        if (pagination) {
+          totalPages.value = pagination.totalPages
+          totalItems.value = pagination.totalItems
+        }
 
         questions.value = results.map(item => ({
           id: item.question_id || item.id,
@@ -358,19 +395,28 @@ const performSearch = async () => {
         }))
       } else {
         questions.value = []
+        totalPages.value = 1
+        totalItems.value = 0
       }
     } else {
       // Use getQuestions API for initial load without query/filters
       const result = await getQuestions({
-        page: 1,
-        per_page: 100,
+        page: currentPage.value,
+        per_page: perPage,
         category: categoryName.value
       })
 
       if (result.success && result.data) {
         questions.value = result.data.data?.results || []
+        const pagination = result.data.data?.pagination
+        if (pagination) {
+          totalPages.value = pagination.totalPages
+          totalItems.value = pagination.totalItems
+        }
       } else {
         questions.value = []
+        totalPages.value = 1
+        totalItems.value = 0
       }
     }
   } catch (error) {
@@ -386,6 +432,7 @@ const performSearch = async () => {
 watch(
   [searchQuery, () => filters.value.difficulty, () => filters.value.type, () => filters.value.tags],
   () => {
+    currentPage.value = 1 // Reset to first page on filter change
     if (searchTimeout) {
       clearTimeout(searchTimeout)
     }
@@ -395,6 +442,11 @@ watch(
   },
   { deep: true }
 )
+
+// Watch page changes to re-fetch from server
+watch(currentPage, () => {
+  performSearch()
+})
 
 const clearSearch = () => {
   searchQuery.value = ''

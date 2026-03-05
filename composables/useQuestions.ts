@@ -105,6 +105,8 @@ export const useQuestions = () => {
     difficulty_level?: string
     question_type?: string
     tags?: string[]
+    page?: number
+    per_page?: number
   } = {}) => {
     try {
       const body: any = {}
@@ -122,16 +124,15 @@ export const useQuestions = () => {
         body.filters = filters
       }
 
-      console.log('Search request body:', JSON.parse(JSON.stringify(body)))
+      if (options.page) body.page = options.page
+      if (options.per_page) body.per_page = options.per_page
 
-      const response = await authFetch<ApiResponse<any>>(`${apiUrl}/api/v1/questions/search`, {
+      const response = await authFetch<PaginatedResponseData<any>>(`${apiUrl}/api/v1/questions/search`, {
         method: 'POST',
         body: body
       })
-      console.log('Search API response:', response)
       return { success: true, data: response }
     } catch (error: any) {
-      console.error('Search API error:', error)
       return {
         success: false,
         error: error.data?.message || 'Failed to search questions',
